@@ -1,9 +1,10 @@
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
 import { buttonVariants } from '@/components/ui/button';
 
-export default async function RG() {
+export default async function RG({ params }: { params: Promise<{ locale: string }> }) {
+  setRequestLocale((await params).locale);
   const t = await getTranslations();
   return (
     <Card className="mx-auto max-w-3xl">

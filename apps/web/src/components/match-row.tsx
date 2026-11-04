@@ -2,6 +2,7 @@
 import { useLocale, useTranslations } from 'next-intl';
 import { ChevronRight } from 'lucide-react';
 import { Link } from '@/i18n/navigation';
+import { matchHref } from '@/lib/routes';
 import { formatDay, formatTime } from '@/lib/utils';
 import type { MatchSummary } from '@/lib/types';
 import { OddsButton } from './odds-button';
@@ -15,7 +16,7 @@ export function MatchRow({ m }: { m: MatchSummary }) {
   const open = m.mainMarket?.status === 'OPEN';
   return (
     <div className="flex flex-col gap-2 border-t border-line/70 px-3 py-3 first:border-t-0 sm:flex-row sm:items-center sm:gap-4">
-      <Link href={`/match/${m.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+      <Link href={matchHref(m.id)} className="flex min-w-0 flex-1 items-center gap-3">
         <div className="w-12 shrink-0 text-center">
           {m.status === 'SCHEDULED' ? (
             <>
@@ -47,7 +48,7 @@ export function MatchRow({ m }: { m: MatchSummary }) {
         ) : finished ? null : (
           <div className="flex h-10 flex-1 items-center justify-center rounded-xl border border-dashed border-line text-xs text-muted">{t('common.suspended')}</div>
         )}
-        <Link href={`/match/${m.id}`} className="hidden h-10 shrink-0 items-center rounded-xl px-2 text-xs font-semibold text-brand hover:bg-elevated sm:flex">+{m.marketCount}</Link>
+        <Link href={matchHref(m.id)} className="hidden h-10 shrink-0 items-center rounded-xl px-2 text-xs font-semibold text-brand hover:bg-elevated sm:flex">+{m.marketCount}</Link>
       </div>
     </div>
   );

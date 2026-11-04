@@ -1,0 +1,43 @@
+name: Deploy static demo to GitHub Pages
+on:
+  push:
+    branches: [main, "claude/**"]
+  schedule:
+    - cron: "17 6 * * *" # daily rebuild keeps the demo calendar fresh
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @athosbet/shared build && pnpm --filter @athosbet/odds-engine build
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Build static demo
+        working-directory: apps/web
+        run: BASE_PATH="${{ steps.pages.outputs.base_path }}" ./scripts/build-static-demo.sh
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: apps/web/out }
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

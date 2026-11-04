@@ -22,7 +22,8 @@
     "react-dom": "19.0.0",
     "socket.io-client": "4.8.1",
     "tailwind-merge": "2.6.0",
-    "zustand": "5.0.3"
+    "zustand": "5.0.3",
+    "@athosbet/odds-engine": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "22.10.7",

@@ -19,6 +19,12 @@ Opera hoje **exclusivamente em sandbox** (saldo fictício `ATH`, sem conversão 
 Documentação: [ARCHITECTURE.md](ARCHITECTURE.md) · [SECURITY.md](SECURITY.md) · [COMPLIANCE.md](COMPLIANCE.md) ·
 [PROGRESS.md](PROGRESS.md) · [docs/API.md](docs/API.md) · [docs/ODDS_ENGINE.md](docs/ODDS_ENGINE.md) · [docs/DEPLOY.md](docs/DEPLOY.md)
 
+## Demo online (GitHub Pages)
+
+Versão estática que roda 100% no navegador (mesmo motor de odds e regras de liquidação; dados sintéticos e saldo
+fictício guardados no próprio aparelho): publicada pelo workflow `.github/workflows/pages.yml` em
+`https://<usuario>.github.io/<repositorio>/`. Build local: `cd apps/web && BASE_PATH=/<repositorio> ./scripts/build-static-demo.sh`.
+
 ## Rodar localmente em 1 comando (porta 8000)
 
 ```bash

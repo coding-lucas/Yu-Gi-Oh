@@ -117,6 +117,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@athosbet/odds-engine':
+        specifier: workspace:*
+        version: link:../../packages/odds-engine
       '@athosbet/shared':
         specifier: workspace:*
         version: link:../../packages/shared

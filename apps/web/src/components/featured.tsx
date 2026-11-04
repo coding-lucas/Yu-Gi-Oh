@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import { formatDay, formatTime } from '@/lib/utils';
 import type { MatchSummary } from '@/lib/types';
 import { Link } from '@/i18n/navigation';
+import { matchHref } from '@/lib/routes';
 import { OddsButton } from './odds-button';
 import { TeamCrest } from './team-badge';
 
@@ -19,7 +20,7 @@ export function FeaturedStrip() {
       <div className="-mx-3 flex snap-x gap-3 overflow-x-auto px-3 pb-1 no-scrollbar">
         {q.data.map((m) => (
           <article key={m.id} className="w-[280px] shrink-0 snap-start rounded-2xl border border-line bg-gradient-to-br from-surface to-elevated p-3">
-            <Link href={`/match/${m.id}`} className="block">
+            <Link href={matchHref(m.id)} className="block">
               <div className="flex items-center justify-between text-[11px] text-muted">
                 <span className="truncate font-semibold uppercase tracking-wide">{m.competition.name}</span>
                 <span className="tabular-nums">{formatDay(m.kickoffAt, locale)} · {formatTime(m.kickoffAt, locale)}</span>

@@ -8,3 +8,4 @@ export * from './metrics';
 export * from './backtest';
 export * from './simulate';
 export * from './random';
+export * from './demo-league';

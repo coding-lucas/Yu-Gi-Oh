@@ -2,7 +2,7 @@
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, STATIC_DEMO } from '@/lib/api';
 import type { User } from '@/lib/types';
 
 const SocketCtx = createContext<Socket | null>(null);
@@ -12,6 +12,7 @@ function RealtimeBridge({ children }: { children: React.ReactNode }) {
   const qc = useQueryClient();
   const [socket, setSocket] = useState<Socket | null>(null);
   useEffect(() => {
+    if (STATIC_DEMO) return; // no server: the in-browser backend has no realtime channel
     const url = process.env.NEXT_PUBLIC_WS_URL || undefined;
     const s = io(url ?? '', { path: '/api/ws', withCredentials: true });
     s.on('board', () => qc.invalidateQueries({ queryKey: ['matches'] }));
@@ -32,7 +33,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     () => new QueryClient({ defaultOptions: { queries: { staleTime: 15_000, refetchOnWindowFocus: true, retry: (n, e) => !(e instanceof ApiError && e.status < 500) && n < 2 } } }),
   );
   useEffect(() => {
-    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') navigator.serviceWorker.register('/sw.js').catch(() => undefined);
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production' && !STATIC_DEMO) navigator.serviceWorker.register('/sw.js').catch(() => undefined);
   }, []);
   return (
     <QueryClientProvider client={qc}>
