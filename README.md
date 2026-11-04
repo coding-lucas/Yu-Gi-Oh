@@ -19,6 +19,17 @@ Opera hoje **exclusivamente em sandbox** (saldo fictício `ATH`, sem conversão 
 Documentação: [ARCHITECTURE.md](ARCHITECTURE.md) · [SECURITY.md](SECURITY.md) · [COMPLIANCE.md](COMPLIANCE.md) ·
 [PROGRESS.md](PROGRESS.md) · [docs/API.md](docs/API.md) · [docs/ODDS_ENGINE.md](docs/ODDS_ENGINE.md) · [docs/DEPLOY.md](docs/DEPLOY.md)
 
+## Rodar localmente em 1 comando (porta 8000)
+
+```bash
+git clone -b claude/athosbet-sports-betting-v5ps8k https://github.com/coding-lucas/Yu-Gi-Oh athosbet
+cd athosbet
+./scripts/run-local.sh          # Windows: powershell -ExecutionPolicy Bypass -File scripts\run-local.ps1
+```
+
+Requer Node 22+ e Docker. Abre o web em `http://localhost:8000/pt` (e no celular, no mesmo Wi-Fi,
+`http://<IP-do-computador>:8000/pt`) e a API em `:4000`.
+
 ## Começando (desenvolvimento)
 
 Pré-requisitos: Node 22, pnpm 10, PostgreSQL 16 e Redis 7 (ou Docker).
