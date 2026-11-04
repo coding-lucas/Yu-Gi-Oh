@@ -1,0 +1,22 @@
+{
+  "name": "athosbet",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AthosBet — international sports betting platform (sandbox)",
+  "packageManager": "pnpm@10.28.0",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "pnpm -r --filter ./packages/** build && pnpm --filter @athosbet/api build && pnpm --filter @athosbet/web build",
+    "build:packages": "pnpm -r --filter ./packages/** build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint",
+    "dev:api": "pnpm --filter @athosbet/api dev",
+    "dev:web": "pnpm --filter @athosbet/web dev",
+    "db:migrate": "pnpm --filter @athosbet/api db:migrate",
+    "db:seed": "pnpm --filter @athosbet/api db:seed"
+  },
+  "devDependencies": {
+    "typescript": "5.7.3"
+  }
+}
