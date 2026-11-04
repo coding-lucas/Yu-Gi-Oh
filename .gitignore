@@ -1,0 +1,12 @@
+node_modules
+dist
+.next
+out
+coverage
+*.tsbuildinfo
+.env
+.env.local
+.turbo
+playwright-report
+test-results
+apps/web/public/sw.js.map
