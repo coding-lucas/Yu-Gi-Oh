@@ -16,5 +16,8 @@
   },
   "dependencies": {
     "@athosbet/shared": "workspace:*"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }

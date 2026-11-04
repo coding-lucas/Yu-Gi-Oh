@@ -28,10 +28,11 @@ import { EventBus } from './realtime/events';
 import { RealtimeGateway } from './realtime/realtime.gateway';
 import { JobsService } from './jobs/jobs.service';
 import { HealthController } from './health/health.controller';
+import { MetricsController } from './health/metrics.controller';
 
 @Module({
   imports: [ThrottlerModule.forRoot({ throttlers: [{ name: 'default', ttl: 60_000, limit: 300 }], skipIf: () => process.env.NODE_ENV === 'test' && process.env.TEST_THROTTLE !== '1' })],
-  controllers: [AuthController, WalletController, SportsController, BetsController, AdminController, AccountController, HealthController],
+  controllers: [AuthController, WalletController, SportsController, BetsController, AdminController, AccountController, HealthController, MetricsController],
   providers: [
     DbService, AuditService, LedgerService, ComplianceService, SettingsService, AuthService, WalletService, PaymentsService,
     SyncService, SportsService, PricingService, BetsService, SettlementService, RiskService, EventBus, RealtimeGateway, JobsService,
