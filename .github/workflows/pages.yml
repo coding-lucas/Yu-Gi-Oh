@@ -1,9 +1,7 @@
 name: Deploy static demo to GitHub Pages
+# Manual only: the site is currently served from the gh-pages branch ("Deploy from a branch").
+# To switch to Actions-based deploys, set Settings → Pages → Source = GitHub Actions and add triggers back.
 on:
-  push:
-    branches: [main, "claude/**"]
-  schedule:
-    - cron: "17 6 * * *" # daily rebuild keeps the demo calendar fresh
   workflow_dispatch:
 
 permissions:
