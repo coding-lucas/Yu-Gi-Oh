@@ -1,6 +1,6 @@
 # AthosBet — instalador completo para Windows.
 # Instala o que faltar (Git, Node 22, Docker Desktop via winget), clona o projeto e sobe o servidor local.
-param([string]$Dir = "$HOME\athosbet", [int]$WebPort = 8080)
+param([string]$Dir = (Join-Path ([Environment]::GetFolderPath("Desktop")) "athosbet"), [int]$WebPort = 8080)
 $ErrorActionPreference = 'Stop'
 function Need($cmd, $wingetId, $name) {
   if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
