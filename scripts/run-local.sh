@@ -6,6 +6,10 @@ cd "$(dirname "$0")/.."
 WEB_PORT="${WEB_PORT:-8000}"
 API_PORT="${API_PORT:-4000}"
 
+port_busy() { (echo >/dev/tcp/127.0.0.1/"$1") >/dev/null 2>&1; }
+for p in "$WEB_PORT" "$API_PORT"; do
+  if port_busy "$p"; then echo "✗ A porta $p já está em uso por outro programa. Feche-o ou rode: WEB_PORT=8080 ./scripts/run-local.sh"; exit 1; fi
+done
 command -v node >/dev/null || { echo "Node.js 22+ is required: https://nodejs.org"; exit 1; }
 command -v docker >/dev/null || { echo "Docker is required: https://docs.docker.com/get-docker/"; exit 1; }
 corepack enable >/dev/null 2>&1 || npm i -g pnpm@10

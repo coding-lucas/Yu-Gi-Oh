@@ -1,7 +1,14 @@
 # AthosBet — Windows (PowerShell): web on http://localhost:8000, API on :4000. Requires Node 22+ and Docker Desktop.
+param([int]$WebPort = 8000, [int]$ApiPort = 4000)
+foreach ($p in @($WebPort, $ApiPort)) {
+  $c = Get-NetTCPConnection -LocalPort $p -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($c) {
+    $proc = (Get-Process -Id $c.OwningProcess -ErrorAction SilentlyContinue).ProcessName
+    throw "A porta $p ja esta em uso por '$proc' (PID $($c.OwningProcess)). Feche-o ou rode com -WebPort 8080"
+  }
+}
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
-$WebPort = 8000; $ApiPort = 4000
 corepack enable
 $lan = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -eq 'Dhcp' } | Select-Object -First 1).IPAddress
 if (-not (Test-Path .env)) {
