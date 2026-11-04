@@ -9,6 +9,8 @@ foreach ($p in @($WebPort, $ApiPort)) {
 }
 $ErrorActionPreference = 'Stop'
 Set-Location (Join-Path $PSScriptRoot '..')
+function Run { param([scriptblock]$b) & $b; if ($LASTEXITCODE -ne 0) { throw "Falhou: $b" } }
+if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) { npm i -g pnpm@10 }
 corepack enable
 $lan = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.PrefixOrigin -eq 'Dhcp' } | Select-Object -First 1).IPAddress
 if (-not (Test-Path .env)) {
@@ -23,16 +25,16 @@ if (-not (Test-Path .env)) {
     -replace '^DATA_ENCRYPTION_KEY=.*', "DATA_ENCRYPTION_KEY=$key" | Set-Content .env
 }
 Get-Content .env | Where-Object { $_ -match '^[A-Z_]+=' } | ForEach-Object { $k, $v = $_ -split '=', 2; [Environment]::SetEnvironmentVariable($k, $v) }
-docker compose up -d postgres redis
+Run { docker compose up -d postgres redis }
 do { Start-Sleep 1; docker compose exec -T postgres pg_isready -U athos -d athosbet *> $null } until ($LASTEXITCODE -eq 0)
-pnpm install --frozen-lockfile
-pnpm build:packages
-pnpm --filter @athosbet/api build
-pnpm --filter @athosbet/api db:migrate
+Run { pnpm install --frozen-lockfile }
+Run { pnpm build:packages }
+Run { pnpm --filter @athosbet/api build }
+Run { pnpm --filter @athosbet/api db:migrate }
 $seeded = docker compose exec -T postgres psql -U athos -d athosbet -tAc "select 1 from users where email='demo@athosbet.dev'"
 if ($seeded -notmatch '1') { pnpm --filter @athosbet/api db:seed }
 $env:API_URL = "http://localhost:$ApiPort"
-Push-Location apps/web; pnpm exec next build; Pop-Location
+Push-Location apps/web; Run { pnpm exec next build }; Pop-Location
 Start-Process -NoNewWindow node -ArgumentList '--enable-source-maps', 'dist/main.js' -WorkingDirectory apps/api
 Write-Host "`nAthosBet: http://localhost:$WebPort/pt   Celular (mesmo Wi-Fi): http://${lan}:$WebPort/pt`n"
 Push-Location apps/web; pnpm exec next start -p $WebPort -H 0.0.0.0; Pop-Location
