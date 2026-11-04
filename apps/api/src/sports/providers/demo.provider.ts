@@ -1,5 +1,18 @@
 import { hashSeed, rng, sampleScore } from '@athosbet/odds-engine';
-import { CompetitionRef, ProviderFixture, SportsProvider } from './types';
+import { CompetitionRef, ProviderFixture, ProviderTeam, SportsProvider } from './types';
+import { CLUB_COLORS } from './club-colors';
+
+export function shortName(name: string): string {
+  const words = name.replace(/[^\p{L}\p{N} -]/gu, '').split(/[ -]/).filter(Boolean);
+  if (words.length === 1) return name.slice(0, 3).toUpperCase();
+  const sig = words.filter((w) => !/^\d+$/.test(w) && (w.length > 2 || /^[A-Z]+$/.test(w)));
+  return (sig.length >= 2 ? sig.map((w) => (/^[A-Z]+$/.test(w) ? w : w[0])).join('') : words[0].slice(0, 3)).slice(0, 3).toUpperCase();
+}
+
+function demoTeam(name: string, country: string): ProviderTeam {
+  const c = CLUB_COLORS[name];
+  return { providerId: `demo:${name}`, name, shortName: shortName(name), country, ...(c ? { primaryColor: c[0], secondaryColor: c[1], crestPattern: c[2] } : {}) };
+}
 
 /**
  * Deterministic SANDBOX data provider used when no API-Football key is configured. Fixtures follow
@@ -7,7 +20,7 @@ import { CompetitionRef, ProviderFixture, SportsProvider } from './types';
  * same fixtures; matches whose kick-off is >2h in the past are "played" with scores sampled from a
  * hidden ground-truth strength model. All data produced here is SYNTHETIC and labelled as such.
  */
-const LEAGUES: Record<string, { teams: string[]; days: number[]; hoursUtc: number[]; country: string }> = {
+export const LEAGUES: Record<string, { teams: string[]; days: number[]; hoursUtc: number[]; country: string }> = {
   'brasileirao-serie-a': {
     country: 'Brazil', days: [0, 3, 6], hoursUtc: [19, 21.5, 23.5, 0.5],
     teams: ['Flamengo', 'Palmeiras', 'Botafogo', 'São Paulo', 'Corinthians', 'Fluminense', 'Internacional', 'Grêmio', 'Atlético Mineiro', 'Cruzeiro', 'Bahia', 'Vasco da Gama', 'Fortaleza', 'Red Bull Bragantino', 'Santos', 'Athletico Paranaense', 'Vitória', 'Mirassol', 'Ceará', 'Sport Recife'],
@@ -111,8 +124,8 @@ export class DemoProvider implements SportsProvider {
           out.push({
             providerId: pid, season, round: `Round ${(round % (2 * (n - 1))) + 1}`, kickoffAt: kickoff, status,
             statusDetail: status === 'CANCELLED' ? 'Cancelled (sandbox simulation)' : null,
-            home: { providerId: `demo:${home}`, name: home, shortName: home.slice(0, 3).toUpperCase(), country: L.country },
-            away: { providerId: `demo:${away}`, name: away, shortName: away.slice(0, 3).toUpperCase(), country: L.country },
+            home: demoTeam(home, L.country),
+            away: demoTeam(away, L.country),
             homeGoals: hg, awayGoals: ag, venue: null, neutral: false,
           });
         });

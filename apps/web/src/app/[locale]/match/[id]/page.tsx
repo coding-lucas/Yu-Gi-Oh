@@ -13,7 +13,7 @@ import { OddsButton } from '@/components/odds-button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { BetSlipPanel } from '@/components/bet-slip';
-import { TeamBadge } from '@/components/team-badge';
+import { TeamCrest } from '@/components/team-badge';
 import { FavoriteButton } from '@/components/match-board';
 import { useBetSlip } from '@/stores/betslip';
 
@@ -85,7 +85,7 @@ export default function MatchPage({ params }: { params: Promise<{ id: string }> 
           <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-5">
             {[m.home, null, m.away].map((tm, i) => tm ? (
               <div key={tm.id} className="flex flex-col items-center gap-2 text-center">
-                <TeamBadge name={tm.name} logo={tm.logoUrl} size={48} />
+                <TeamCrest team={tm} size={56} />
                 <span className="text-sm font-bold sm:text-base">{tm.name}</span>
                 <FavoriteButton kind="TEAM" id={tm.id} />
                 <FormDots form={i === 0 ? m.form.home : m.form.away} />

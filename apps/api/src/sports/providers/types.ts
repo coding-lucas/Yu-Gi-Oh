@@ -6,6 +6,10 @@ export interface ProviderTeam {
   shortName?: string;
   logoUrl?: string | null;
   country?: string | null;
+  /** official club colours (factual data) used for the generated crest when no licensed logo exists */
+  primaryColor?: string;
+  secondaryColor?: string;
+  crestPattern?: 'solid' | 'stripes' | 'hoops' | 'sash' | 'halves';
 }
 
 export interface ProviderFixture {

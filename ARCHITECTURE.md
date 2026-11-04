@@ -23,7 +23,7 @@
 | --- | --- |
 | `auth` | cadastro (18+, território), login, rotação de refresh token com detecção de reuso, recuperação de senha, MFA TOTP |
 | `ledger` | razão de partidas dobradas; idempotência; reversões; conciliação |
-| `wallet`, `payments` | carteira sandbox, gateway sandbox (PIX/cartão/boleto/transferência/BTC simulados), webhooks assinados e deduplicados, saques com revisão |
+| `wallet`, `payments` | carteira; abstração `PaymentProvider` (Paysafe principal, Nuvei secundário, simulador interno), elegibilidade por método/país, webhooks com releitura autoritativa, confirmação assíncrona, saques com revisão, reembolsos, conciliação — ver docs/PAYMENTS.md |
 | `compliance` | jurisdições, limites de jogo responsável (com período de resfriamento), autoexclusão, heurísticas AML |
 | `sports` | catálogo de competições, provedores (API-Football, demo), sincronização idempotente com deduplicação, fusos horários |
 | `odds` | ajuste do modelo, precificação, versionamento de odds, comparação externa, fechamento no início do jogo |
@@ -73,6 +73,7 @@ Plano de contas (por moeda/modo): `USER_WALLET` (por jogador), `HOUSE_BETS_HELD`
 | Anulada | HELD −S · WALLET +S |
 | Correção | reversão exata da liquidação anterior + nova liquidação `v{n+1}` |
 | Saque | WALLET −A · PENDING +A → PENDING −A · CLEARING +A (ou reversão) |
+| Reembolso de depósito | WALLET −A · PENDING +A → PENDING −A · CLEARING +A (ou reversão) |
 
 ## Fluxo de aposta
 

@@ -17,7 +17,7 @@ Autenticação: cookie `ab_at` (web) ou `Authorization: Bearer <accessToken>` (c
 | GET | `/markets/:id/history` | histórico de versões de odds |
 | POST | `/auth/register` · `/auth/login` · `/auth/refresh` · `/auth/logout` | sessão |
 | POST | `/auth/password/forgot` · `/auth/password/reset` | recuperação |
-| POST | `/payments/webhooks/sandbox` | webhook do PSP sandbox (HMAC `x-sandbox-signature`) |
+| POST | `/payments/webhooks/:provider` | webhooks (`paysafe`: HMAC base64 no cabeçalho `signature`; `sandbox`: `x-sandbox-signature`) |
 
 ## Jogador (autenticado)
 | Método | Rota | Descrição |
@@ -26,8 +26,9 @@ Autenticação: cookie `ab_at` (web) ou `Authorization: Bearer <accessToken>` (c
 | POST | `/auth/mfa/setup` · `/auth/mfa/enable` | MFA |
 | GET | `/wallet` · `/wallet/statement` | saldo e extrato (razão) |
 | GET | `/payments/methods` · `/payments` | métodos disponíveis no território, histórico |
-| POST | `/payments/deposits` | `{ amount, method, idempotencyKey, card? }` |
-| POST | `/payments/withdrawals` | `{ amount, method, idempotencyKey }` |
+| POST | `/payments/deposits` | `{ amount, method, idempotencyKey, paymentToken?, returnUrl? }` → `payment` + `nextAction` (REDIRECT / TOKENIZE_CARD / DISPLAY_INSTRUCTIONS) |
+| POST | `/payments/:id/confirm` | `{ paymentToken }` — token Paysafe.js para depósito com cartão |
+| POST | `/payments/withdrawals` | `{ amount, method, idempotencyKey, payoutDetails?, paymentToken? }` |
 | POST | `/payments/:id/simulate` | sandbox: confirma pagamento assíncrono |
 | POST | `/bets` | `{ legs:[{oddsId, odds}], stake, idempotencyKey, oddsPolicy }` → 201 / 409 `ODDS_CHANGED` / 422 |
 | GET | `/bets?status=OPEN\|SETTLED` · `/bets/:id` | apostas |
@@ -45,7 +46,10 @@ Autenticação: cookie `ab_at` (web) ou `Authorization: Bearer <accessToken>` (c
 `/admin/settings`, `PATCH /admin/settings/pricing|risk`, `/admin/competitions`, `PATCH /admin/competitions/:id`,
 `/admin/jurisdictions`, `PATCH /admin/jurisdictions/:country`, `/admin/suspicious`, `PATCH /admin/suspicious/:id`,
 `/admin/audit`, `/admin/sync-runs`, `/admin/models`, `POST /admin/models/backtest`,
-`POST /admin/jobs/sync|history|coverage|price|external-odds|close|settle`.
+`POST /admin/jobs/sync|history|coverage|price|external-odds|close|settle`,
+`GET /admin/payments/providers`, `GET /admin/payments/eligibility`, `PATCH /admin/payments/eligibility/:id`,
+`POST /admin/payments/:id/refund`, `POST /admin/payments/reconcile/:provider`, `GET /admin/payments/reconciliation-runs`,
+`POST /admin/payments/sync`, `GET /admin/teams`, `PATCH /admin/teams/:id` (escudo licenciado / cores).
 
 ## WebSocket (`/api/ws`, Socket.IO)
 Cliente → `watch(matchId)`, `unwatch(matchId)`. Servidor → `odds {matchId, markets}`, `board {matchId}`,

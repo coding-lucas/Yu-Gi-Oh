@@ -1,7 +1,7 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { api, ApiError } from '@/lib/api';
 import { useErrorMessage } from '@/lib/labels';
 import { cn, formatDateTime, formatMoney, newIdempotencyKey, parseStake } from '@/lib/utils';
@@ -12,8 +12,10 @@ import { Tabs } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { RequireAuth } from '@/components/require-auth';
 import { useWallet } from '@/components/providers';
+import { PaysafeCardFields } from '@/components/paysafe-card';
 
-const METHODS = ['PIX', 'CREDIT_CARD', 'DEBIT_CARD', 'BOLETO', 'BANK_TRANSFER', 'BTC'] as const;
+const METHODS = ['PIX', 'CREDIT_CARD', 'DEBIT_CARD', 'BOLETO', 'BANK_TRANSFER', 'CRYPTO'] as const;
+type MethodInfo = { method: string; deposit: boolean; withdrawal: boolean; provider: string | null; currency: string | null };
 
 export default function WalletPage() {
   return <RequireAuth><Wallet /></RequireAuth>;
@@ -30,17 +32,33 @@ function Wallet() {
   const [method, setMethod] = useState<(typeof METHODS)[number]>('PIX');
   const [amount, setAmount] = useState('50');
   const [card, setCard] = useState('4242 4242 4242 4242');
+  const [payoutKey, setPayoutKey] = useState('');
   const [key, setKey] = useState(newIdempotencyKey());
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const statement = useQuery<any[]>({ queryKey: ['wallet', 'statement'], queryFn: () => api('/wallet/statement') });
   const payments = useQuery<any[]>({ queryKey: ['wallet', 'payments'], queryFn: () => api('/payments') });
-  const methods = useQuery<{ method: string; sandbox: boolean; real: boolean }[]>({ queryKey: ['methods'], queryFn: () => api('/payments/methods') });
+  const methods = useQuery<MethodInfo[]>({ queryKey: ['methods'], queryFn: () => api('/payments/methods') });
+  const info = (m: string) => methods.data?.find((x) => x.method === m);
+  const available = (m: string) => { const i = info(m); return dir === 'deposit' ? !!i?.deposit : !!i?.withdrawal; };
+  const current = info(method);
+  useEffect(() => {
+    if (methods.data && !available(method)) {
+      const first = METHODS.find((m) => available(m));
+      if (first) setMethod(first);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [methods.data, dir]);
 
   const submit = useMutation({
     mutationFn: () => api(dir === 'deposit' ? '/payments/deposits' : '/payments/withdrawals', {
       method: 'POST',
-      json: { amount: parseStake(amount), method, idempotencyKey: key, ...(dir === 'deposit' && method.includes('CARD') ? { card: { number: card } } : {}) },
+      json: {
+        amount: parseStake(amount), method, idempotencyKey: key,
+        ...(dir === 'deposit' && method.includes('CARD') && current?.provider === 'sandbox' ? { card: { number: card } } : {}),
+        ...(dir === 'deposit' ? { returnUrl: `${window.location.origin}/${locale}/wallet` } : {}),
+        ...(dir === 'withdraw' && payoutKey ? { payoutDetails: { destination: payoutKey } } : {}),
+      },
     }),
     onSuccess: (r) => { setResult(r); setError(null); setKey(newIdempotencyKey()); qc.invalidateQueries({ queryKey: ['wallet'] }); },
     onError: (e) => { setError(err(e instanceof ApiError ? e.code : undefined)); if (e instanceof ApiError && e.status < 500) setKey(newIdempotencyKey()); },
@@ -51,7 +69,7 @@ function Wallet() {
   });
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-4 lg:grid-cols-[1fr_1.2fr]">
+    <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 lg:grid-cols-[1fr_1.2fr] [&>*]:min-w-0">
       <div className="space-y-4">
         <Card className="bg-gradient-to-br from-brand/25 via-surface to-emerald/20">
           <CardContent>
@@ -65,27 +83,41 @@ function Wallet() {
             <Tabs value={dir} onChange={(v) => { setDir(v); setResult(null); }} items={[{ value: 'deposit', label: t('deposit') }, { value: 'withdraw', label: t('withdraw') }]} />
             <div className="grid grid-cols-3 gap-1.5">
               {METHODS.map((m) => (
-                <button key={m} onClick={() => setMethod(m)} className={cn('rounded-xl border px-2 py-2 text-xs font-semibold', method === m ? 'border-emerald bg-emerald/10 text-emerald' : 'border-line text-muted')}>{t(m)}</button>
+                <button key={m} disabled={!available(m)} title={available(m) ? undefined : t('notAvailable')} onClick={() => setMethod(m)} className={cn('rounded-xl border px-2 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-40', method === m ? 'border-emerald bg-emerald/10 text-emerald' : 'border-line text-muted')}>
+                  {t(m)}
+                  {available(m) && info(m)?.provider && info(m)!.provider !== 'sandbox' && <span className="block text-[9px] font-normal uppercase tracking-wide opacity-70">{t('via', { provider: info(m)!.provider! })}</span>}
+                </button>
               ))}
             </div>
             <Field label={t('amount')}><Input inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} /></Field>
-            {dir === 'deposit' && method.includes('CARD') && <Field label={t('cardNumber')}><Input value={card} onChange={(e) => setCard(e.target.value)} /></Field>}
+            {dir === 'deposit' && method.includes('CARD') && current?.provider === 'sandbox' && <Field label={t('cardNumber')}><Input value={card} onChange={(e) => setCard(e.target.value)} /></Field>}
+            {dir === 'withdraw' && current?.provider && current.provider !== 'sandbox' && <Field label={t('payoutKey')}><Input value={payoutKey} onChange={(e) => setPayoutKey(e.target.value)} /></Field>}
             <Button className="w-full" variant="emerald" size="lg" disabled={submit.isPending || !parseStake(amount)} onClick={() => submit.mutate()}>{dir === 'deposit' ? t('deposit') : t('withdraw')}</Button>
             {error && <p className="rounded-lg bg-danger/10 p-2 text-xs text-danger">{error}</p>}
             {result?.payment && (
               <div className="space-y-2 rounded-xl border border-line bg-bg p-3 text-xs">
                 <p>{t(dir === 'deposit' ? 'deposit' : 'withdraw')}: <b>{t(`pstatus.${result.payment.status}` as any)}</b></p>
+                {result.nextAction?.type === 'REDIRECT' && result.nextAction.url && (
+                  <a href={result.nextAction.url} rel="noopener noreferrer" className="inline-flex h-9 items-center rounded-xl bg-brand px-4 text-xs font-semibold text-white">{t('continuePayment')}</a>
+                )}
+                {result.nextAction?.type === 'TOKENIZE_CARD' && result.payment.status === 'REQUIRES_ACTION' && (
+                  <PaysafeCardFields sdk={result.nextAction.sdk} onToken={async (token) => {
+                    const p = await api(`/payments/${result.payment.id}/confirm`, { method: 'POST', json: { paymentToken: token } });
+                    setResult({ payment: p });
+                    qc.invalidateQueries({ queryKey: ['wallet'] });
+                  }} />
+                )}
                 {result.instructions && (
                   <>
                     <p className="font-semibold">{t('instructions')}</p>
                     {Object.entries(result.instructions).map(([k, v]) => <p key={k} className="break-all font-mono text-muted">{k}: {String(v)}</p>)}
                   </>
                 )}
-                {result.payment.status === 'PENDING' && dir === 'deposit' && <Button size="sm" variant="outline" onClick={() => simulate.mutate(result.payment.id)}>{t('simulate')}</Button>}
+                {['PENDING', 'REQUIRES_ACTION'].includes(result.payment.status) && dir === 'deposit' && result.payment.provider === 'sandbox' && <Button size="sm" variant="outline" onClick={() => simulate.mutate(result.payment.id)}>{t('simulate')}</Button>}
               </div>
             )}
             <p className="text-[11px] text-muted">{t('sandboxNote')}</p>
-            {methods.data && methods.data.every((m) => !m.real) && <p className="text-[11px] text-warn">{t('realUnavailable')}</p>}
+            <p className="text-[11px] text-warn">{t('realUnavailable')}</p>
           </CardContent>
         </Card>
       </div>
@@ -114,11 +146,11 @@ function Wallet() {
           <CardContent className="p-0">
             <ul className="divide-y divide-line/60">
               {payments.data?.map((p) => (
-                <li key={p.id} className="flex items-center gap-3 px-4 py-2.5 text-sm">
-                  <span className="font-medium">{t(p.direction === 'DEPOSIT' ? 'deposit' : 'withdraw')} · {t(p.method)}</span>
+                <li key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm">
+                  <span className="font-medium">{t(p.direction === 'DEPOSIT' ? 'deposit' : p.direction === 'REFUND' ? 'refund' : 'withdraw')} · {t(p.method)}</span>
                   <Badge variant={p.status === 'COMPLETED' ? 'emerald' : p.status === 'FAILED' || p.status === 'CANCELLED' ? 'danger' : 'warn'}>{t(`pstatus.${p.status}` as any)}</Badge>
                   <span className="ms-auto font-bold tabular-nums">{formatMoney(p.amount, locale)}</span>
-                  {p.status === 'PENDING' && p.direction === 'DEPOSIT' && <Button size="sm" variant="ghost" onClick={() => simulate.mutate(p.id)}>{t('simulate')}</Button>}
+                  {['PENDING', 'REQUIRES_ACTION'].includes(p.status) && p.direction === 'DEPOSIT' && p.provider === 'sandbox' && <Button size="sm" variant="ghost" onClick={() => simulate.mutate(p.id)}>{t('simulate')}</Button>}
                 </li>
               ))}
             </ul>

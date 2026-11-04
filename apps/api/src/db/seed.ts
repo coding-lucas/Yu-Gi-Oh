@@ -9,6 +9,7 @@ import { ComplianceService } from '../compliance/compliance.service';
 import { SyncService } from '../sports/sync.service';
 import { PricingService } from '../odds/pricing.service';
 import { AuthService } from '../auth/auth.service';
+import { EligibilityService } from '../payments/eligibility.service';
 
 /**
  * Seeds a demo environment: jurisdictions, competitions, history, fixtures, prices, a demo player and
@@ -23,6 +24,7 @@ async function main() {
   await app.get(ComplianceService).seedJurisdictions();
   const sync = app.get(SyncService);
   await sync.syncCatalog();
+  await app.get(EligibilityService).seedDefaults();
   console.log('history…', await sync.syncHistory().then((s) => s.upserted));
   console.log('fixtures…', await sync.syncFixtures().then((s) => s.upserted));
   console.log('priced matches:', await app.get(PricingService).priceUpcoming());

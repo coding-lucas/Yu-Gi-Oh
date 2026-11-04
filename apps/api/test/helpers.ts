@@ -24,6 +24,9 @@ import { SyncService } from '../src/sports/sync.service';
 import { PricingService } from '../src/odds/pricing.service';
 import { ComplianceService } from '../src/compliance/compliance.service';
 import { SettingsService } from '../src/settings/settings.service';
+import { EligibilityService } from '../src/payments/eligibility.service';
+import { PAYMENT_PROVIDERS } from '../src/payments/provider.registry';
+import type { PaymentProvider } from '../src/payments/provider';
 
 export class FakeProvider implements SportsProvider {
   readonly name = 'fake';
@@ -79,11 +82,13 @@ export interface TestCtx {
   close(): Promise<void>;
 }
 
-export async function createTestApp(opts: { league?: boolean } = {}): Promise<TestCtx> {
+export async function createTestApp(opts: { league?: boolean; paymentProviders?: PaymentProvider[] } = {}): Promise<TestCtx> {
   await resetDb();
   const provider = new FakeProvider();
   if (opts.league !== false) provider.fixturesBySlug.set('premier-league', buildLeague());
-  const mod = await Test.createTestingModule({ imports: [AppModule] }).overrideProvider(SPORTS_PROVIDER).useValue(provider).compile();
+  let builder = Test.createTestingModule({ imports: [AppModule] }).overrideProvider(SPORTS_PROVIDER).useValue(provider);
+  if (opts.paymentProviders) builder = builder.overrideProvider(PAYMENT_PROVIDERS).useValue(opts.paymentProviders);
+  const mod = await builder.compile();
   const app = mod.createNestApplication({ logger: false, rawBody: true });
   app.setGlobalPrefix('api');
   app.use(cookieParser());
@@ -92,6 +97,7 @@ export async function createTestApp(opts: { league?: boolean } = {}): Promise<Te
   const get = <T>(cls: new (...a: any[]) => T) => app.get(cls);
   await get(ComplianceService).seedJurisdictions();
   await get(SyncService).syncCatalog();
+  await get(EligibilityService).seedDefaults();
   get(SettingsService).clearCache();
   if (opts.league !== false) {
     await get(SyncService).syncHistory();

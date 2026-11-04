@@ -28,6 +28,27 @@ const schema = z.object({
   SCHEDULER_ENABLED: bool(true),
   COOKIE_SECURE: bool(false),
   SANDBOX_WEBHOOK_SECRET: z.string().default('sandbox-webhook-secret'),
+  /** internal simulator (no external calls). Disabled automatically when REAL_MONEY_ENABLED=true. */
+  INTERNAL_SANDBOX_PROVIDER: bool(true),
+  PUBLIC_APP_URL: z.string().default('http://localhost:3000'),
+  // ── Paysafe Payments API (primary PSP) ──
+  /** test = https://api.test.paysafe.com, live = https://api.paysafe.com. live is refused unless real money is legally enabled. */
+  PAYSAFE_ENV: z.enum(['test', 'live']).default('test'),
+  PAYSAFE_BASE_URL: z.string().optional(),
+  PAYSAFE_API_USERNAME: z.string().optional(),
+  PAYSAFE_API_PASSWORD: z.string().optional(),
+  /** public single-use-token key for Paysafe.js card tokenisation (safe to expose to the browser) */
+  PAYSAFE_SINGLE_USE_TOKEN: z.string().optional(),
+  PAYSAFE_WEBHOOK_HMAC_KEY: z.string().optional(),
+  PAYSAFE_SIGNATURE_HEADER: z.string().default('signature'),
+  /** JSON map "METHOD:CURRENCY" -> Paysafe accountId (merchant account per method/currency) */
+  PAYSAFE_ACCOUNTS: z.string().default('{}'),
+  /** JSON map METHOD -> Paysafe paymentType, overrides defaults once confirmed with Paysafe */
+  PAYSAFE_PAYMENT_TYPES: z.string().default('{}'),
+  // ── Nuvei (secondary PSP, not activated) ──
+  NUVEI_MERCHANT_ID: z.string().optional(),
+  NUVEI_MERCHANT_SITE_ID: z.string().optional(),
+  NUVEI_SECRET_KEY: z.string().optional(),
 });
 
 export type Config = z.infer<typeof schema>;
@@ -38,6 +59,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (parsed.NODE_ENV === 'production') {
     if (parsed.JWT_SECRET.startsWith('dev-only')) throw new Error('JWT_SECRET must be set in production');
     if (/^0+1$/.test(parsed.DATA_ENCRYPTION_KEY)) throw new Error('DATA_ENCRYPTION_KEY must be set in production');
+  }
+  if (parsed.PAYSAFE_ENV === 'live' && !parsed.REAL_MONEY_ENABLED) {
+    throw new Error('PAYSAFE_ENV=live requires REAL_MONEY_ENABLED=true (only after homologation and legal authorisation)');
   }
   return parsed;
 }

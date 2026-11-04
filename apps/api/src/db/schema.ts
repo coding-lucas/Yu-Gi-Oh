@@ -119,21 +119,32 @@ export const ledgerEntries = pgTable('ledger_entries', {
   createdAt: ts('created_at').notNull().defaultNow(),
 });
 
+export type PaymentStatus = 'PENDING' | 'REQUIRES_ACTION' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'REQUIRES_REVIEW';
+
 export const payments = pgTable('payments', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull(),
   provider: text('provider').notNull(),
   method: text('method').notNull(),
-  direction: text('direction').$type<'DEPOSIT' | 'WITHDRAWAL'>().notNull(),
+  direction: text('direction').$type<'DEPOSIT' | 'WITHDRAWAL' | 'REFUND'>().notNull(),
   amount: money('amount').notNull(),
   currency: text('currency').notNull(),
   mode: text('mode').$type<'SANDBOX' | 'REAL'>().notNull(),
-  status: text('status').$type<'PENDING' | 'COMPLETED' | 'FAILED' | 'CANCELLED' | 'REQUIRES_REVIEW'>().notNull(),
+  status: text('status').$type<PaymentStatus>().notNull(),
   idempotencyKey: text('idempotency_key').notNull(),
   providerRef: text('provider_ref'),
   ledgerTxId: uuid('ledger_tx_id'),
   failureReason: text('failure_reason'),
   metadata: jsonb('metadata').notNull().default({}),
+  country: char('country', { length: 2 }),
+  providerCurrency: text('provider_currency'),
+  providerAmount: money('provider_amount'),
+  providerStatus: text('provider_status'),
+  providerHandleId: text('provider_handle_id'),
+  nextAction: jsonb('next_action'),
+  parentPaymentId: uuid('parent_payment_id'),
+  syncAttempts: integer('sync_attempts').notNull().default(0),
+  lastSyncedAt: ts('last_synced_at'),
   createdAt: ts('created_at').notNull().defaultNow(),
   updatedAt: ts('updated_at').notNull().defaultNow(),
 });
@@ -143,6 +154,8 @@ export const paymentEvents = pgTable('payment_events', {
   provider: text('provider').notNull(),
   eventId: text('event_id').notNull(),
   payload: jsonb('payload').notNull(),
+  signatureValid: boolean('signature_valid').notNull().default(true),
+  paymentId: uuid('payment_id'),
   processedAt: ts('processed_at').notNull().defaultNow(),
 });
 
@@ -176,6 +189,10 @@ export const teams = pgTable('teams', {
   shortName: text('short_name'),
   country: text('country'),
   logoUrl: text('logo_url'),
+  primaryColor: text('primary_color'),
+  secondaryColor: text('secondary_color'),
+  crestPattern: text('crest_pattern'),
+  logoSource: text('logo_source'),
 });
 
 export const teamAliases = pgTable('team_aliases', {
@@ -393,6 +410,36 @@ export const providerSyncRuns = pgTable('provider_sync_runs', {
   error: text('error'),
   httpStatus: integer('http_status'),
   details: jsonb('details'),
+  startedAt: ts('started_at').notNull().defaultNow(),
+  finishedAt: ts('finished_at'),
+});
+
+export const paymentMethodEligibility = pgTable('payment_method_eligibility', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  provider: text('provider').notNull(),
+  method: text('method').notNull(),
+  country: text('country').notNull(),
+  mode: text('mode').$type<'SANDBOX' | 'REAL'>().notNull(),
+  currency: text('currency').notNull(),
+  directions: text('directions').array().notNull().default(['DEPOSIT', 'WITHDRAWAL', 'REFUND']),
+  priority: integer('priority').notNull().default(100),
+  athosbetEligible: boolean('athosbet_eligible').notNull().default(false),
+  regulatoryApproved: boolean('regulatory_approved').notNull().default(false),
+  gatewayApproved: boolean('gateway_approved').notNull().default(false),
+  enabled: boolean('enabled').notNull().default(false),
+  minAmount: money('min_amount').notNull(),
+  maxAmount: money('max_amount').notNull(),
+  evidence: text('evidence'),
+  updatedBy: uuid('updated_by'),
+  updatedAt: ts('updated_at').notNull().defaultNow(),
+});
+
+export const paymentReconciliationRuns = pgTable('payment_reconciliation_runs', {
+  id: bigserial('id', { mode: 'number' }).primaryKey(),
+  provider: text('provider').notNull(),
+  status: text('status').$type<'OK' | 'MISMATCH' | 'ERROR'>().notNull(),
+  checked: integer('checked').notNull().default(0),
+  mismatches: jsonb('mismatches').notNull().default([]),
   startedAt: ts('started_at').notNull().defaultNow(),
   finishedAt: ts('finished_at'),
 });

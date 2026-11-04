@@ -8,6 +8,7 @@ export type AccountKind = 'USER_WALLET' | 'HOUSE_BETS_HELD' | 'HOUSE_PNL' | 'PAY
 export type Mode = 'SANDBOX' | 'REAL';
 export type LedgerTxType =
   | 'DEPOSIT' | 'WITHDRAWAL_REQUEST' | 'WITHDRAWAL_COMPLETE' | 'WITHDRAWAL_REVERSAL'
+  | 'REFUND_REQUEST' | 'REFUND_COMPLETE' | 'REFUND_REVERSAL'
   | 'BET_PLACE' | 'BET_SETTLE' | 'BET_RESETTLE_REVERSAL' | 'ADJUSTMENT';
 
 export interface PostEntry {

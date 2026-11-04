@@ -159,3 +159,23 @@ describe('catalogue & config', () => {
     expect(loadConfig({} as any).REAL_MONEY_ENABLED).toBe(false);
   });
 });
+
+describe('team visual identity (demo)', () => {
+  it('every demo team has club colours and a short name', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { LEAGUES, shortName } = require('../../src/sports/providers/demo.provider');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { CLUB_COLORS } = require('../../src/sports/providers/club-colors');
+    const all = Object.values(LEAGUES).flatMap((l: any) => l.teams) as string[];
+    const missing = all.filter((t) => !CLUB_COLORS[t]);
+    expect(missing).toEqual([]);
+    for (const [p, s] of Object.values(CLUB_COLORS) as string[][]) {
+      expect(p).toMatch(/^#[0-9A-F]{6}$/i);
+      expect(s).toMatch(/^#[0-9A-F]{6}$/i);
+    }
+    expect(shortName('Flamengo')).toBe('FLA');
+    expect(shortName('Manchester City')).toBe('MC');
+    expect(shortName('Red Bull Bragantino')).toBe('RBB');
+    expect(shortName('1. FC Köln')).toBe('FCK');
+  });
+});

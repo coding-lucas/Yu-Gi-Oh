@@ -6,7 +6,7 @@ import { formatDay, formatTime } from '@/lib/utils';
 import type { MatchSummary } from '@/lib/types';
 import { OddsButton } from './odds-button';
 import { Badge } from './ui/badge';
-import { TeamBadge } from './team-badge';
+import { TeamCrest } from './team-badge';
 
 export function MatchRow({ m }: { m: MatchSummary }) {
   const locale = useLocale();
@@ -31,7 +31,7 @@ export function MatchRow({ m }: { m: MatchSummary }) {
         <div className="min-w-0 flex-1 space-y-1">
           {[{ team: m.home, g: m.homeGoals }, { team: m.away, g: m.awayGoals }].map(({ team, g }) => (
             <div key={team.id} className="flex items-center gap-2">
-              <TeamBadge name={team.name} logo={team.logoUrl} />
+              <TeamCrest team={team} size={20} />
               <span className="truncate text-sm font-medium">{team.name}</span>
               {finished && <span className="ms-auto text-sm font-bold tabular-nums">{g}</span>}
             </div>

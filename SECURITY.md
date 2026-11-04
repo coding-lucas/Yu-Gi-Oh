@@ -38,7 +38,13 @@
 * Triggers de banco tornam razão e auditoria **append-only** e exigem transações balanceadas, mesmo que a aplicação falhe.
 * Idempotência em apostas, depósitos, saques, webhooks e liquidações; testes de concorrência comprovam ausência de
   gasto duplo e de crédito duplo.
-* Webhooks de pagamento assinados (HMAC-SHA256, comparação constante) e deduplicados por `(provider, event_id)`.
+* Webhooks de pagamento assinados (HMAC-SHA256, comparação constante) e deduplicados por `(provider, event_id)`;
+  assinaturas inválidas são rejeitadas e auditadas. O conteúdo do webhook **nunca** move dinheiro: o status é relido
+  na API do provedor antes de qualquer lançamento.
+* Cartões: PCI DSS SAQ-A — dados capturados nos campos hospedados do Paysafe.js; o backend recebe apenas tokens de uso
+  único e recusa números de cartão para gateways reais. Credenciais Paysafe ficam só no servidor; apenas a chave
+  pública de tokenização é enviada ao navegador.
+* Destinos de saque (chave PIX, conta) armazenados mascarados e cifrados (AES-256-GCM) quando necessários.
 
 ## Segredos e configuração
 

@@ -8,6 +8,7 @@ import { SettlementService } from '../settlement/settlement.service';
 import { LedgerService } from '../ledger/ledger.service';
 import { ComplianceService } from '../compliance/compliance.service';
 import { EventBus } from '../realtime/events';
+import { PaymentsService } from '../payments/payments.service';
 
 export const JOBS = {
   'sync-fixtures': 10 * 60_000,
@@ -19,6 +20,8 @@ export const JOBS = {
   settle: 2 * 60_000,
   reconcile: 60 * 60_000,
   'stale-check': 15 * 60_000,
+  'payments-sync': 60_000,
+  'payments-reconcile': 60 * 60_000,
 } as const;
 export type JobName = keyof typeof JOBS | 'settle-match';
 
@@ -43,6 +46,7 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
     private readonly ledger: LedgerService,
     private readonly compliance: ComplianceService,
     private readonly bus: EventBus,
+    private readonly payments: PaymentsService,
   ) {}
 
   async run(name: JobName, data: any = {}) {
@@ -64,6 +68,12 @@ export class JobsService implements OnApplicationBootstrap, OnModuleDestroy {
         const stale = await this.sync.staleUpcoming();
         await this.pricing.suspendMatches(stale.map((s) => s.id), 'DATA_STALE');
         return stale.length;
+      }
+      case 'payments-sync': return this.payments.syncPending();
+      case 'payments-reconcile': {
+        const out = [];
+        for (const p of this.payments.registry.all()) if (p.isConfigured()) out.push(await this.payments.reconcile(p.name));
+        return out;
       }
       case 'reconcile': {
         const r = await this.ledger.reconcile();

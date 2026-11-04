@@ -11,6 +11,8 @@ _Última atualização: 2026-11-04._
 * ✅ Cadastro (18+, território), login, refresh com rotação/reuso, recuperação de senha, bloqueio por força bruta
 * ✅ MFA TOTP obrigatório para equipe; RBAC (USER/SUPPORT/RISK/ADMIN); CSRF; auditoria
 * ✅ Marca AthosBet (logotipo SVG original, paleta azul/esmeralda/grafite/branco, ícones PWA)
+* ✅ Escudos dos times: logo licenciado do feed/operador quando disponível; caso contrário brasão AthosBet gerado com as
+  cores e padrão do clube (132 clubes demo com cores cadastradas); edição auditada no painel
 
 ## Fase 2 — Interface mobile first e i18n
 * ✅ 11 idiomas com chaves/placeholder validados por teste; detecção automática; seletor manual; RTL (árabe)
@@ -60,12 +62,21 @@ _Última atualização: 2026-11-04._
 
 ## Fase 7 — Integrações financeiras, segurança, conformidade
 * ✅ Gateway sandbox completo (PIX, cartão crédito/débito, boleto, transferência, BTC simulados)
-* 🟡 Nuvei/Paysafe: apenas interfaces desativadas — depende de contrato e licença
+* ✅ Abstração `PaymentProvider` + registro de provedores + roteamento por elegibilidade (provedor × método × país × modo)
+* ✅ Paysafe Payments API (sandbox): payment handles, payments (`settleWithAuth`), standalone credits, refunds,
+  `dupCheck` + recuperação de resposta perdida, webhooks HMAC com releitura autoritativa, job de confirmação
+  assíncrona, conciliação provedor × razão, auditoria — testado com Paysafe simulada (10 unit + 9 integração)
+* 🟡 **Sem chamadas reais ao sandbox Paysafe**: `developer.paysafe.com` estava bloqueado na rede e não há credenciais.
+  Nomes de `paymentType` alternativos (PIX/Boleto/Pay by Bank/Crypto), campos obrigatórios por método e o formato exato
+  do cabeçalho de assinatura precisam de confirmação na homologação (configuráveis). Paysafe.js (cartões) implementado
+  no front, a validar contra a referência oficial.
+* ✅ Gate de elegibilidade: 3 aprovações + evidência obrigatórias (constraint no banco), revogação imediata, só ADMIN
+* 🟡 Nuvei: provedor registrado e desativado (interface pronta; conector depende de contrato)
 * ✅ Limites de jogo responsável com resfriamento, autoexclusão, gate territorial, alertas AML
 * ⏳ Provedor de KYC/verificação de idade documental; e-mail transacional
 
 ## Fase 8 — Testes finais, documentação, observabilidade, produção
-* ✅ Testes: shared (20), odds-engine (19), API unit (16), integração (36), E2E MVP (1), web (18), UI Playwright
+* ✅ Testes: shared (20), odds-engine (19), API (73: unit, integração com PostgreSQL real, Paysafe simulada, E2E MVP), web (18), UI Playwright
 * 🟡 Teste de carga: script k6 pronto (`tests/load`), **não executado** neste ambiente (k6 indisponível)
 * ✅ `/api/health`, `/api/metrics` (Prometheus), `provider_sync_runs`, auditoria
 * ✅ Docker Compose, Dockerfiles, CI (GitHub Actions), `.env.example`, Swagger (`/api/docs`), guia de deploy

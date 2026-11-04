@@ -6,7 +6,7 @@ import { walkForwardBacktest } from '@athosbet/odds-engine';
 import { AuthUser, Client, ClientInfo, CurrentUser, Roles } from '../common/auth';
 import { ZodPipe } from '../common/zod';
 import { DbService } from '../db/db.service';
-import { bets, competitions, jurisdictions, markets, matches, payments, providerSyncRuns, suspiciousActivities, users, matchResultHistory, modelRuns } from '../db/schema';
+import { bets, competitions, jurisdictions, markets, matches, payments, providerSyncRuns, suspiciousActivities, users, matchResultHistory, modelRuns, teams } from '../db/schema';
 import { AuditService } from '../audit/audit.service';
 import { SettingsService } from '../settings/settings.service';
 import { RiskService } from '../risk/risk.service';
@@ -189,8 +189,7 @@ export class AdminController {
   @HttpCode(200)
   @Post('payments/:id/approve')
   async approve(@CurrentUser() a: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
-    await this.payments.approveWithdrawal(id, a);
-    return { ok: true };
+    return this.payments.approveWithdrawal(id, a);
   }
 
   @Roles('ADMIN', 'RISK')
@@ -199,6 +198,82 @@ export class AdminController {
   async reject(@CurrentUser() a: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body(new ZodPipe(z.object({ reason: z.string().min(2).max(200) }))) b: { reason: string }) {
     await this.payments.rejectWithdrawal(id, b.reason, a);
     return { ok: true };
+  }
+
+  @Get('payments/providers')
+  providers() {
+    return this.payments.registry.status();
+  }
+
+  @Get('payments/eligibility')
+  eligibility() {
+    return this.payments.eligibility.list().then(ser);
+  }
+
+  /**
+   * Records AthosBet eligibility / regulatory approval / gateway approval for a (provider, method,
+   * country, mode) and enables it. Enabling requires all three approvals and an evidence reference.
+   */
+  @Roles('ADMIN')
+  @Patch('payments/eligibility/:id')
+  async setEligibility(@CurrentUser() a: AuthUser, @Client() c: ClientInfo, @Param('id', ParseUUIDPipe) id: string, @Body(new ZodPipe(z.object({
+    athosbetEligible: z.boolean().optional(), regulatoryApproved: z.boolean().optional(), gatewayApproved: z.boolean().optional(), enabled: z.boolean().optional(),
+    priority: z.number().int().min(1).max(10000).optional(), evidence: z.string().max(500).optional(),
+    directions: z.array(z.enum(['DEPOSIT', 'WITHDRAWAL', 'REFUND'])).min(1).optional(),
+    minAmount: z.number().int().positive().optional(), maxAmount: z.number().int().positive().optional(),
+  }).strict())) b: any) {
+    const patch = { ...b, minAmount: b.minAmount !== undefined ? BigInt(b.minAmount) : undefined, maxAmount: b.maxAmount !== undefined ? BigInt(b.maxAmount) : undefined };
+    for (const k of Object.keys(patch)) if (patch[k] === undefined) delete patch[k];
+    return ser(await this.payments.eligibility.update(id, patch, a, c.ip));
+  }
+
+  @Roles('ADMIN', 'RISK')
+  @HttpCode(200)
+  @Post('payments/:id/refund')
+  refund(@CurrentUser() a: AuthUser, @Param('id', ParseUUIDPipe) id: string, @Body(new ZodPipe(z.object({ amount: z.number().int().positive().optional(), reason: z.string().min(3).max(200), idempotencyKey: z.string().min(8).max(100) }))) b: { amount?: number; reason: string; idempotencyKey: string }) {
+    return this.payments.refund(id, b.amount !== undefined ? BigInt(b.amount) : null, b.reason, a, b.idempotencyKey);
+  }
+
+  @Roles('ADMIN', 'RISK')
+  @HttpCode(200)
+  @Post('payments/reconcile/:provider')
+  reconcilePayments(@CurrentUser() a: AuthUser, @Param('provider') provider: string) {
+    void this.audit.log({ actorId: a.id, actorRole: a.role, action: 'admin.payments.reconcile', entityType: 'provider', entityId: provider });
+    return this.payments.reconcile(provider);
+  }
+
+  @Get('payments/reconciliation-runs')
+  reconciliationRuns() {
+    return this.payments.reconciliationRuns();
+  }
+
+  @Roles('ADMIN')
+  @HttpCode(200)
+  @Post('payments/sync')
+  syncPayments() {
+    return this.payments.syncPending(0);
+  }
+
+  /** Team visual identity: only crests the operator holds rights to (licensed feed / club authorisation). */
+  @Roles('ADMIN')
+  @Patch('teams/:id')
+  async patchTeam(@CurrentUser() a: AuthUser, @Client() c: ClientInfo, @Param('id', ParseUUIDPipe) id: string, @Body(new ZodPipe(z.object({
+    logoUrl: z.string().url().startsWith('https://').max(500).nullable().optional(), logoSource: z.string().max(120).optional(),
+    primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(), secondaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+    crestPattern: z.enum(['solid', 'stripes', 'hoops', 'sash', 'halves']).optional(),
+  }).strict())) b: any) {
+    const [before] = await this.dbs.db.select().from(teams).where(eq(teams.id, id));
+    if (!before) throw err.notFound();
+    if (b.logoUrl && !b.logoSource) throw err.badRequest('LOGO_SOURCE_REQUIRED');
+    if (b.logoSource) b.logoSource = `ADMIN: ${b.logoSource}`;
+    const [after] = await this.dbs.db.update(teams).set(b).where(eq(teams.id, id)).returning();
+    await this.audit.log({ actorId: a.id, actorRole: a.role, action: 'admin.team.update', entityType: 'team', entityId: id, before, after, ip: c.ip });
+    return after;
+  }
+
+  @Get('teams')
+  teamsList(@Query('q') q?: string) {
+    return this.dbs.db.select().from(teams).where(q ? sql`${teams.name} ILIKE ${'%' + q + '%'}` : undefined).orderBy(teams.name).limit(300);
   }
 
   @Get('ledger/reconcile')

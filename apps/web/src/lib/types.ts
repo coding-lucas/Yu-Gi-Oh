@@ -1,6 +1,6 @@
 export interface Selection { key: string; oddsId: number; odds: number; oddsK: number; version?: number }
 export interface Market { id: string; key: string; type: string; line: number | null; status: string; suspensionReason: string | null; selections: Selection[] }
-export interface TeamRef { id: string; name: string; shortName: string | null; logoUrl: string | null }
+export interface TeamRef { id: string; name: string; shortName: string | null; logoUrl: string | null; primaryColor?: string | null; secondaryColor?: string | null; crestPattern?: string | null }
 export interface CompetitionRef { id: string; slug: string; name: string; country: string; countryCode: string | null; region: string; priority: number }
 export interface MatchSummary {
   id: string; kickoffAt: string; status: string; round: string | null; homeGoals: number | null; awayGoals: number | null;

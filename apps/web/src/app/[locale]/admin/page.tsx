@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs } from '@/components/ui/tabs';
 import { RequireAuth } from '@/components/require-auth';
 import { useMe } from '@/components/providers';
+import { TeamCrest } from '@/components/team-badge';
 
 type Tab = 'overview' | 'matches' | 'risk' | 'payments' | 'users' | 'audit' | 'settings' | 'integrations';
 
@@ -187,15 +188,96 @@ function Payments() {
   const t = useTranslations('admin');
   const locale = useLocale();
   const q = useQuery<any[]>({ queryKey: ['admin', 'payments'], queryFn: () => api('/admin/payments') });
+  const prov = useQuery<any[]>({ queryKey: ['admin', 'providers'], queryFn: () => api('/admin/payments/providers') });
+  const elig = useQuery<any[]>({ queryKey: ['admin', 'eligibility'], queryFn: () => api('/admin/payments/eligibility') });
+  const runs = useQuery<any[]>({ queryKey: ['admin', 'pay-recon'], queryFn: () => api('/admin/payments/reconciliation-runs') });
+  const [msg, setMsg] = useState<string | null>(null);
+  const call = async (fn: () => Promise<unknown>) => {
+    try { await fn(); setMsg('✓'); } catch (e) { setMsg(e instanceof ApiError ? `${e.code}` : 'ERROR'); }
+    q.refetch(); elig.refetch(); runs.refetch();
+  };
+  const patch = (id: string, body: Record<string, unknown>) => call(() => api(`/admin/payments/eligibility/${id}`, { method: 'PATCH', json: body }));
   return (
-    <Card className="overflow-x-auto">
-      <table className="w-full min-w-[760px] text-sm"><tbody>{q.data?.map((p) => (
-        <tr key={p.id} className="border-t border-line/60"><td className="px-4 py-2 text-xs text-muted">{formatDateTime(p.createdAt, locale)}</td><td>{p.direction}</td><td>{p.method}</td><td><Badge variant={p.status === 'COMPLETED' ? 'emerald' : p.status === 'REQUIRES_REVIEW' ? 'warn' : 'default'}>{p.status}</Badge></td><td className="font-bold tabular-nums">{formatMoney(p.amount, locale)}</td>
-          <td className="space-x-1 pe-4 text-end">{p.status === 'REQUIRES_REVIEW' && (<>
-            <Button size="sm" variant="emerald" onClick={async () => { await api(`/admin/payments/${p.id}/approve`, { method: 'POST' }); q.refetch(); }}>{t('approve')}</Button>
-            <Button size="sm" variant="danger" onClick={async () => { await api(`/admin/payments/${p.id}/reject`, { method: 'POST', json: { reason: 'Rejected by operator' } }); q.refetch(); }}>{t('reject')}</Button>
-          </>)}</td></tr>
-      ))}</tbody></table>
+    <div className="space-y-4">
+      {msg && <p className="rounded-lg bg-elevated p-2 text-xs text-muted">{msg}</p>}
+      <div className="grid gap-3 md:grid-cols-3">
+        {prov.data?.map((p) => (
+          <Card key={p.name} className="flex items-center justify-between p-4">
+            <div><p className="font-bold capitalize">{p.name}</p><p className="text-xs text-muted">{p.mode}</p></div>
+            <div className="flex items-center gap-2">
+              <Badge variant={p.configured ? 'emerald' : 'default'}>{p.configured ? 'configured' : 'not configured'}</Badge>
+              {p.configured && <Button size="sm" variant="outline" onClick={() => call(() => api(`/admin/payments/reconcile/${p.name}`, { method: 'POST' }))}>Reconcile</Button>}
+            </div>
+          </Card>
+        ))}
+      </div>
+      <Card className="overflow-x-auto">
+        <CardHeader><CardTitle>Method eligibility (AthosBet · regulation · gateway)</CardTitle><Button size="sm" variant="ghost" onClick={() => call(() => api('/admin/payments/sync', { method: 'POST' }))}>Sync pending</Button></CardHeader>
+        <table className="w-full min-w-[900px] text-xs">
+          <thead className="text-left uppercase text-muted"><tr><th className="px-4 py-2">Provider</th><th>Method</th><th>Country</th><th>Mode</th><th>Cur.</th><th>AthosBet</th><th>Regulatory</th><th>Gateway</th><th>Enabled</th><th>Evidence</th></tr></thead>
+          <tbody>{elig.data?.map((r) => (
+            <tr key={r.id} className="border-t border-line/60">
+              <td className="px-4 py-2 font-semibold">{r.provider}</td><td>{r.method}</td><td>{r.country}</td><td>{r.mode}</td><td>{r.currency}</td>
+              {(['athosbetEligible', 'regulatoryApproved', 'gatewayApproved'] as const).map((k) => (
+                <td key={k}><input type="checkbox" checked={r[k]} disabled={r.provider === 'sandbox'} onChange={(e) => patch(r.id, { [k]: e.target.checked })} /></td>
+              ))}
+              <td><input type="checkbox" checked={r.enabled} disabled={r.provider === 'sandbox'} onChange={(e) => {
+                const evidence = e.target.checked && !r.evidence ? prompt('Evidence (contract / legal memo / gateway approval reference)') ?? '' : r.evidence;
+                patch(r.id, { enabled: e.target.checked, ...(evidence ? { evidence } : {}) });
+              }} /></td>
+              <td className="max-w-[220px] truncate pe-4 text-muted" title={r.evidence ?? ''}>{r.evidence ?? '—'}</td>
+            </tr>
+          ))}</tbody>
+        </table>
+      </Card>
+      <Card className="overflow-x-auto">
+        <CardHeader><CardTitle>{t('payments')}</CardTitle></CardHeader>
+        <table className="w-full min-w-[860px] text-sm"><tbody>{q.data?.map((p) => (
+          <tr key={p.id} className="border-t border-line/60"><td className="px-4 py-2 text-xs text-muted">{formatDateTime(p.createdAt, locale)}</td><td>{p.direction}</td><td>{p.method}</td><td className="text-xs">{p.provider}</td><td><Badge variant={p.status === 'COMPLETED' ? 'emerald' : p.status === 'REQUIRES_REVIEW' ? 'warn' : 'default'}>{p.status}</Badge></td><td className="font-bold tabular-nums">{formatMoney(p.amount, locale)}</td>
+            <td className="space-x-1 pe-4 text-end">
+              {p.status === 'REQUIRES_REVIEW' && (<>
+                <Button size="sm" variant="emerald" onClick={() => call(() => api(`/admin/payments/${p.id}/approve`, { method: 'POST' }))}>{t('approve')}</Button>
+                <Button size="sm" variant="danger" onClick={() => call(() => api(`/admin/payments/${p.id}/reject`, { method: 'POST', json: { reason: 'Rejected by operator' } }))}>{t('reject')}</Button>
+              </>)}
+              {p.status === 'COMPLETED' && p.direction === 'DEPOSIT' && <Button size="sm" variant="outline" onClick={() => { const reason = prompt('Refund reason'); if (reason) call(() => api(`/admin/payments/${p.id}/refund`, { method: 'POST', json: { reason, idempotencyKey: `refund-${p.id}-${Date.now()}` } })); }}>Refund</Button>}
+            </td></tr>
+        ))}</tbody></table>
+      </Card>
+      <Card className="overflow-x-auto">
+        <CardHeader><CardTitle>Payment reconciliation</CardTitle></CardHeader>
+        <table className="w-full text-xs"><tbody>{runs.data?.map((r) => (
+          <tr key={r.id} className="border-t border-line/60"><td className="px-4 py-1.5 text-muted">{formatDateTime(r.startedAt, locale)}</td><td>{r.provider}</td><td><Badge variant={r.status === 'OK' ? 'emerald' : 'danger'}>{r.status}</Badge></td><td>{r.checked}</td><td className="max-w-md truncate pe-4 font-mono text-muted">{r.mismatches?.length ? JSON.stringify(r.mismatches) : ''}</td></tr>
+        ))}</tbody></table>
+      </Card>
+    </div>
+  );
+}
+
+function Teams() {
+  const [q, setQ] = useState('');
+  const teams = useQuery<any[]>({ queryKey: ['admin', 'teams', q], queryFn: () => api(`/admin/teams${q ? `?q=${encodeURIComponent(q)}` : ''}`) });
+  const [edit, setEdit] = useState<Record<string, any>>({});
+  const [msg, setMsg] = useState<string | null>(null);
+  return (
+    <Card className="overflow-x-auto lg:col-span-2">
+      <CardHeader><CardTitle>Team crests</CardTitle><Input className="h-9 w-56" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} /></CardHeader>
+      <p className="px-4 text-[11px] text-muted">Official crests are trademarks: set a logo only from a licensed source (data feed or club authorisation) and record it. Otherwise AthosBet renders its own shield in the club colours.</p>
+      {msg && <p className="px-4 text-xs text-muted">{msg}</p>}
+      <table className="w-full min-w-[860px] text-sm"><tbody>{teams.data?.slice(0, 60).map((tm) => {
+        const e = edit[tm.id] ?? {};
+        return (
+          <tr key={tm.id} className="border-t border-line/60">
+            <td className="px-4 py-2"><TeamCrest team={{ ...tm, ...e }} size={28} /></td><td className="font-medium">{tm.name}</td>
+            <td className="text-xs text-muted">{tm.logoSource ?? 'generated'}</td>
+            <td><input type="color" value={e.primaryColor ?? tm.primaryColor ?? '#2F7BFF'} onChange={(x) => setEdit({ ...edit, [tm.id]: { ...e, primaryColor: x.target.value.toUpperCase() } })} /></td>
+            <td><input type="color" value={e.secondaryColor ?? tm.secondaryColor ?? '#FFFFFF'} onChange={(x) => setEdit({ ...edit, [tm.id]: { ...e, secondaryColor: x.target.value.toUpperCase() } })} /></td>
+            <td><select className="rounded bg-bg text-xs" value={e.crestPattern ?? tm.crestPattern ?? 'solid'} onChange={(x) => setEdit({ ...edit, [tm.id]: { ...e, crestPattern: x.target.value } })}>{['solid', 'stripes', 'hoops', 'sash', 'halves'].map((p) => <option key={p}>{p}</option>)}</select></td>
+            <td className="pe-4 text-end"><Button size="sm" variant="outline" disabled={!edit[tm.id]} onClick={async () => {
+              try { await api(`/admin/teams/${tm.id}`, { method: 'PATCH', json: e }); setMsg('✓'); setEdit({ ...edit, [tm.id]: undefined }); teams.refetch(); } catch (x) { setMsg(x instanceof ApiError ? x.code : 'ERROR'); }
+            }}>Save</Button></td>
+          </tr>
+        );
+      })}</tbody></table>
     </Card>
   );
 }
@@ -270,6 +352,7 @@ function Settings() {
             <td className="pe-4"><label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={c.bettingEnabled} onChange={async (e) => { await api(`/admin/competitions/${c.id}`, { method: 'PATCH', json: { bettingEnabled: e.target.checked } }); comps.refetch(); }} />betting</label></td></tr>
         ))}</tbody></table>
       </Card>
+      <Teams />
       <Card className="overflow-x-auto lg:col-span-2">
         <CardHeader><CardTitle>Jurisdictions</CardTitle></CardHeader>
         <table className="w-full text-sm"><tbody>{jur.data?.map((j) => (

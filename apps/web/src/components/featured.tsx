@@ -6,7 +6,7 @@ import { formatDay, formatTime } from '@/lib/utils';
 import type { MatchSummary } from '@/lib/types';
 import { Link } from '@/i18n/navigation';
 import { OddsButton } from './odds-button';
-import { TeamBadge } from './team-badge';
+import { TeamCrest } from './team-badge';
 
 export function FeaturedStrip() {
   const t = useTranslations();
@@ -26,7 +26,7 @@ export function FeaturedStrip() {
               </div>
               <div className="my-3 space-y-1.5">
                 {[m.home, m.away].map((tm) => (
-                  <div key={tm.id} className="flex items-center gap-2 text-sm font-semibold"><TeamBadge name={tm.name} logo={tm.logoUrl} size={22} />{tm.name}</div>
+                  <div key={tm.id} className="flex items-center gap-2 text-sm font-semibold"><TeamCrest team={tm} size={22} />{tm.name}</div>
                 ))}
               </div>
             </Link>

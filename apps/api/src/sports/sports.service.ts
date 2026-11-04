@@ -77,8 +77,8 @@ export class SportsService {
     return this.dbs.db.select({
       id: matches.id, kickoffAt: matches.kickoffAt, status: matches.status, statusDetail: matches.statusDetail, round: matches.round,
       homeGoals: matches.homeGoals, awayGoals: matches.awayGoals, featured: matches.featured, provider: matches.provider,
-      home: { id: home.id, name: home.name, shortName: home.shortName, logoUrl: home.logoUrl },
-      away: { id: away.id, name: away.name, shortName: away.shortName, logoUrl: away.logoUrl },
+      home: { id: home.id, name: home.name, shortName: home.shortName, logoUrl: home.logoUrl, primaryColor: home.primaryColor, secondaryColor: home.secondaryColor, crestPattern: home.crestPattern },
+      away: { id: away.id, name: away.name, shortName: away.shortName, logoUrl: away.logoUrl, primaryColor: away.primaryColor, secondaryColor: away.secondaryColor, crestPattern: away.crestPattern },
       competition: { id: competitions.id, slug: competitions.slug, name: competitions.name, country: competitions.country, countryCode: competitions.countryCode, region: competitions.region, priority: competitions.priority },
     }).from(matches)
       .innerJoin(competitions, eq(competitions.id, matches.competitionId))

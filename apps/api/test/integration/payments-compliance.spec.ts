@@ -26,17 +26,17 @@ describe('payments, responsible gambling & territorial rules', () => {
     const ids = new Set(reqs.filter((r) => r.status === 201).map((r) => r.body.payment.id));
     expect(ids.size).toBe(1);
     const pid = [...ids][0] as string;
-    expect(reqs.find((r) => r.status === 201)!.body.payment.status).toBe('PENDING');
+    expect(reqs.find((r) => r.status === 201)!.body.payment.status).toBe('REQUIRES_ACTION');
     // PSP delivers the same webhook several times, concurrently
     const svc = ctx.get(PaymentsService);
     const [p] = (await ctx.dbs.pool.query('SELECT provider_ref FROM payments WHERE id=$1', [pid])).rows;
-    const body = JSON.stringify({ id: 'evt_dup_1', type: 'payment.succeeded', providerRef: p.provider_ref });
+    const body = JSON.stringify({ id: 'evt_dup_1', type: 'payment.succeeded', merchantRef: pid, providerRef: p.provider_ref });
     const sig = svc.sandbox.sign(body);
     const hooks = await Promise.all([1, 2, 3].map(() => ctx.http.post('/api/payments/webhooks/sandbox').set('content-type', 'application/json').set('x-sandbox-signature', sig).send(body)));
     expect(hooks.every((h) => h.status === 200)).toBe(true);
     expect(hooks.filter((h) => h.body.duplicate === false)).toHaveLength(1);
     // a different event id for the same payment still cannot double-credit (ledger idempotency)
-    const body2 = JSON.stringify({ id: 'evt_dup_2', type: 'payment.succeeded', providerRef: p.provider_ref });
+    const body2 = JSON.stringify({ id: 'evt_dup_2', type: 'payment.succeeded', merchantRef: pid, providerRef: p.provider_ref });
     await ctx.http.post('/api/payments/webhooks/sandbox').set('content-type', 'application/json').set('x-sandbox-signature', svc.sandbox.sign(body2)).send(body2);
     expect(await balance(u.token)).toBe(12000n);
     // forged signature rejected
@@ -125,7 +125,7 @@ describe('payments, responsible gambling & territorial rules', () => {
     expect(j.request).toBe('SANDBOX_ONLY');
     expect(j.realMoneyAvailable).toBe(false);
     const methods = (await ctx.http.get('/api/payments/methods').set(auth(u.token)).set('cf-ipcountry', 'BR')).body;
-    expect(methods.every((m: any) => m.real === false)).toBe(true);
+    expect(methods.every((m: any) => m.provider === 'sandbox')).toBe(true); // Paysafe not approved → never offered
     // registration from a blocked territory / blocked account country
     const reg = await ctx.http.post('/api/auth/register').set('cf-ipcountry', 'US').send({ email: `x${Date.now()}@t.dev`, password: 'Password123', displayName: 'Xx', dateOfBirth: '1990-01-01', country: 'GB', acceptTerms: true });
     expect(reg.body.code).toBe('JURISDICTION_BLOCKED');

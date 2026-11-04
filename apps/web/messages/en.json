@@ -22,7 +22,17 @@
     "responsible": "Responsible gaming",
     "age": "18+ only. Play responsibly."
   },
-  "nav": { "home": "Sports", "live": "Live", "bets": "My bets", "wallet": "Wallet", "account": "Account", "admin": "Admin", "login": "Log in", "register": "Sign up", "logout": "Log out" },
+  "nav": {
+    "home": "Sports",
+    "live": "Live",
+    "bets": "My bets",
+    "wallet": "Wallet",
+    "account": "Account",
+    "admin": "Admin",
+    "login": "Log in",
+    "register": "Sign up",
+    "logout": "Log out"
+  },
   "home": {
     "featured": "Featured matches",
     "today": "Today",
@@ -36,7 +46,15 @@
     "prevWeek": "Previous week",
     "nextWeek": "Next week"
   },
-  "status": { "SCHEDULED": "Scheduled", "LIVE": "Live", "FINISHED": "Full time", "POSTPONED": "Postponed", "CANCELLED": "Cancelled", "ABANDONED": "Abandoned", "SUSPENDED": "Interrupted" },
+  "status": {
+    "SCHEDULED": "Scheduled",
+    "LIVE": "Live",
+    "FINISHED": "Full time",
+    "POSTPONED": "Postponed",
+    "CANCELLED": "Cancelled",
+    "ABANDONED": "Abandoned",
+    "SUSPENDED": "Interrupted"
+  },
   "match": {
     "markets": "Markets",
     "model": "AthosBet model",
@@ -56,10 +74,19 @@
     "TOTAL_GOALS": "Total goals {line}",
     "CORRECT_SCORE": "Correct score",
     "sel": {
-      "HOME": "1", "DRAW": "X", "AWAY": "2",
-      "HOME_DRAW": "1X", "HOME_AWAY": "12", "DRAW_AWAY": "X2",
-      "YES": "Yes", "NO": "No", "OVER": "Over", "UNDER": "Under",
-      "OTHER_HOME": "Other home win", "OTHER_DRAW": "Other draw", "OTHER_AWAY": "Other away win"
+      "HOME": "1",
+      "DRAW": "X",
+      "AWAY": "2",
+      "HOME_DRAW": "1X",
+      "HOME_AWAY": "12",
+      "DRAW_AWAY": "X2",
+      "YES": "Yes",
+      "NO": "No",
+      "OVER": "Over",
+      "UNDER": "Under",
+      "OTHER_HOME": "Other home win",
+      "OTHER_DRAW": "Other draw",
+      "OTHER_AWAY": "Other away win"
     }
   },
   "slip": {
@@ -84,7 +111,22 @@
     "unavailable": "Selection unavailable",
     "selections": "{count, plural, one {# selection} other {# selections}}"
   },
-  "bets": { "open": "Open", "settled": "Settled", "stake": "Stake", "payout": "Payout", "potential": "Potential return", "WON": "Won", "LOST": "Lost", "VOID": "Void", "OPEN": "Open", "PENDING": "Pending", "code": "Code", "placedAt": "Placed", "resettled": "Re-settled after result correction", "none": "You have no bets yet" },
+  "bets": {
+    "open": "Open",
+    "settled": "Settled",
+    "stake": "Stake",
+    "payout": "Payout",
+    "potential": "Potential return",
+    "WON": "Won",
+    "LOST": "Lost",
+    "VOID": "Void",
+    "OPEN": "Open",
+    "PENDING": "Pending",
+    "code": "Code",
+    "placedAt": "Placed",
+    "resettled": "Re-settled after result correction",
+    "none": "You have no bets yet"
+  },
   "wallet": {
     "title": "Wallet",
     "deposit": "Deposit",
@@ -98,9 +140,40 @@
     "cardNumber": "Card number (test)",
     "sandboxNote": "Sandbox gateway: no money moves. Card 4000 0000 0000 0002 simulates a decline.",
     "realUnavailable": "Real-money payments are not available in your jurisdiction.",
-    "PIX": "PIX", "CREDIT_CARD": "Credit card", "DEBIT_CARD": "Debit card", "BOLETO": "Boleto", "BANK_TRANSFER": "Bank transfer", "BTC": "Bitcoin",
-    "tx": { "DEPOSIT": "Deposit", "WITHDRAWAL_REQUEST": "Withdrawal", "WITHDRAWAL_COMPLETE": "Withdrawal paid", "WITHDRAWAL_REVERSAL": "Withdrawal reversed", "BET_PLACE": "Bet placed", "BET_SETTLE": "Bet settled", "BET_RESETTLE_REVERSAL": "Settlement reversed", "ADJUSTMENT": "Welcome balance" },
-    "pstatus": { "PENDING": "Pending", "COMPLETED": "Completed", "FAILED": "Failed", "CANCELLED": "Cancelled", "REQUIRES_REVIEW": "Under review" }
+    "PIX": "PIX",
+    "CREDIT_CARD": "Credit card",
+    "DEBIT_CARD": "Debit card",
+    "BOLETO": "Boleto",
+    "BANK_TRANSFER": "Bank transfer",
+    "BTC": "Bitcoin",
+    "tx": {
+      "DEPOSIT": "Deposit",
+      "WITHDRAWAL_REQUEST": "Withdrawal",
+      "WITHDRAWAL_COMPLETE": "Withdrawal paid",
+      "WITHDRAWAL_REVERSAL": "Withdrawal reversed",
+      "BET_PLACE": "Bet placed",
+      "BET_SETTLE": "Bet settled",
+      "BET_RESETTLE_REVERSAL": "Settlement reversed",
+      "ADJUSTMENT": "Welcome balance",
+      "REFUND_REQUEST": "Refund",
+      "REFUND_COMPLETE": "Refund paid",
+      "REFUND_REVERSAL": "Refund reversed"
+    },
+    "pstatus": {
+      "PENDING": "Pending",
+      "COMPLETED": "Completed",
+      "FAILED": "Failed",
+      "CANCELLED": "Cancelled",
+      "REQUIRES_REVIEW": "Under review",
+      "REQUIRES_ACTION": "Action required"
+    },
+    "CRYPTO": "Crypto (BTC)",
+    "continuePayment": "Continue to payment",
+    "cardSecure": "Card details are entered in Paysafe secure fields and never reach AthosBet servers.",
+    "notAvailable": "Not available in your country yet",
+    "via": "via {provider}",
+    "payoutKey": "Payout destination (e.g. PIX key or IBAN)",
+    "refund": "Refund"
   },
   "auth": {
     "email": "E-mail",
@@ -125,8 +198,13 @@
     "timezone": "Time zone",
     "limits": "Deposit & loss limits",
     "limitsHelp": "Lowering a limit is immediate. Increases take effect after 24 hours.",
-    "depositDaily": "Daily deposit", "depositWeekly": "Weekly deposit", "depositMonthly": "Monthly deposit",
-    "lossDaily": "Daily loss", "lossWeekly": "Weekly loss", "lossMonthly": "Monthly loss", "maxStake": "Max stake per bet",
+    "depositDaily": "Daily deposit",
+    "depositWeekly": "Weekly deposit",
+    "depositMonthly": "Monthly deposit",
+    "lossDaily": "Daily loss",
+    "lossWeekly": "Weekly loss",
+    "lossMonthly": "Monthly loss",
+    "maxStake": "Max stake per bet",
     "pending": "Pending until {date}",
     "exclusion": "Take a break",
     "coolOff": "Cool-off",

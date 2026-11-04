@@ -110,8 +110,14 @@ export class SyncService {
   }
 
   private async upsertTeam(tx: Database, t: ProviderTeam) {
-    const [row] = await tx.insert(teams).values({ provider: this.provider.name, providerId: t.providerId, name: t.name, shortName: t.shortName, logoUrl: t.logoUrl ?? null, country: t.country ?? null })
-      .onConflictDoUpdate({ target: [teams.provider, teams.providerId], set: { name: t.name, logoUrl: t.logoUrl ?? null } })
+    const identity = { primaryColor: t.primaryColor ?? null, secondaryColor: t.secondaryColor ?? null, crestPattern: t.crestPattern ?? null };
+    const logo = t.logoUrl ? { logoUrl: t.logoUrl, logoSource: `${this.provider.name} (licensed data feed)` } : {};
+    const [row] = await tx.insert(teams).values({ provider: this.provider.name, providerId: t.providerId, name: t.name, shortName: t.shortName, country: t.country ?? null, ...identity, ...logo })
+      .onConflictDoUpdate({
+        target: [teams.provider, teams.providerId],
+        // a crest uploaded by an operator (licensed asset) is never overwritten by the feed
+        set: { name: t.name, ...(t.shortName ? { shortName: t.shortName } : {}), ...(t.primaryColor ? identity : {}), ...(t.logoUrl ? { logoUrl: sql`CASE WHEN ${teams.logoSource} LIKE 'ADMIN%' THEN ${teams.logoUrl} ELSE ${t.logoUrl} END`, logoSource: sql`CASE WHEN ${teams.logoSource} LIKE 'ADMIN%' THEN ${teams.logoSource} ELSE ${logo.logoSource} END` } : {}) },
+      })
       .returning({ id: teams.id });
     return row.id;
   }

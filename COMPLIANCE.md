@@ -52,11 +52,24 @@ de KYC (documento + prova de vida + PEP/sanções) está pendente.**
 
 ## Pagamentos
 
-* Gateway sandbox simula PIX, cartões, boleto, transferência e BTC (sem movimentar dinheiro).
-* Conectores reais (`nuvei`, `paysafe`) existem apenas como *placeholders* desativados. Ativação exige contrato de
-  merchant que **aceite expressamente apostas licenciadas**, licença no mercado de destino e MCC/descritor corretos
-  (ex.: 7995). **É proibido** usar intermediários ou descrições comerciais que ocultem a atividade de apostas.
-* Matriz `METHOD_MARKETS` documenta onde cada método poderia ser oferecido; BTC está desativado em todos os mercados.
+* Provedor principal: **Paysafe Payments API** (sandbox `PAYSAFE_ENV=test`); secundário: **Nuvei** (registrado,
+  desativado); simulador interno para o sandbox. Detalhes em [docs/PAYMENTS.md](docs/PAYMENTS.md).
+* **Cada método só é oferecido após registro de três aprovações** — elegibilidade da AthosBet, regulamentação
+  aplicável e aprovação comercial do gateway — mais uma referência de evidência, por provedor × método × país × modo.
+  O banco impede ativar sem elas; revogar qualquer aprovação desativa o método; toda mudança é auditada.
+* Todas as linhas Paysafe nascem desativadas. O ambiente `live` da Paysafe é recusado na inicialização enquanto
+  `REAL_MONEY_ENABLED=false`.
+* É **proibido** usar intermediários ou descritores comerciais que ocultem a atividade de apostas; o merchant deve ser
+  aprovado expressamente para gambling licenciado (MCC 7995).
+* Cartões em conformidade PCI DSS SAQ-A (campos hospedados Paysafe.js); dados de destino de saque são mascarados e,
+  quando necessários para pagamento posterior, cifrados com AES-256-GCM.
+
+## Escudos e marcas de clubes
+
+Escudos oficiais são marcas registradas. A AthosBet só exibe um escudo oficial quando ele vem de fonte licenciada (logo
+fornecido pelo feed de dados contratado, ex.: API-Football, ou arquivo enviado por operador que detenha os direitos —
+campo `logo_source`, auditado). Na ausência disso, a interface gera um brasão próprio da AthosBet nas cores do clube
+com o monograma, sem imitar o escudo registrado.
 
 ## Regras de mercado
 

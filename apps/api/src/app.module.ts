@@ -13,6 +13,8 @@ import { SettingsService } from './settings/settings.service';
 import { WalletService } from './wallet/wallet.service';
 import { WalletController } from './wallet/wallet.controller';
 import { PaymentsService } from './payments/payments.service';
+import { EligibilityService } from './payments/eligibility.service';
+import { buildProviders, PAYMENT_PROVIDERS, PaymentProviderRegistry } from './payments/provider.registry';
 import { SyncService } from './sports/sync.service';
 import { SportsService } from './sports/sports.service';
 import { SportsController } from './sports/sports.controller';
@@ -37,6 +39,9 @@ import { MetricsController } from './health/metrics.controller';
     DbService, AuditService, LedgerService, ComplianceService, SettingsService, AuthService, WalletService, PaymentsService,
     SyncService, SportsService, PricingService, BetsService, SettlementService, RiskService, EventBus, RealtimeGateway, JobsService,
     { provide: SPORTS_PROVIDER, useFactory: createSportsProvider },
+    { provide: PAYMENT_PROVIDERS, useFactory: () => buildProviders() },
+    { provide: PaymentProviderRegistry, useFactory: (p) => new PaymentProviderRegistry(p), inject: [PAYMENT_PROVIDERS] },
+    EligibilityService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
